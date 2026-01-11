@@ -76,14 +76,9 @@ WSGI_APPLICATION = 'interview_system.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'interview_db',
-        'USER': 'root',
-        'PASSWORD':'NewStrongPassword123!',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-
 }
 
 
