@@ -166,6 +166,10 @@ def process_frame(request):
             else: # OK
                 session.last_face_seen = now
             
+
+            # Save latest frame for monitoring
+            # We save the base64 string directly
+            session.latest_frame = frame_data
             session.save()
             
             return JsonResponse({
@@ -178,6 +182,20 @@ def process_frame(request):
             # print(e) # Debug
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     return JsonResponse({'status': 'error'}, status=405)
+
+def get_latest_frame(request):
+    session_id = request.GET.get('session_id')
+    if not session_id:
+        return JsonResponse({'status': 'error', 'message': 'Missing session_id'}, status=400)
+    
+    session = get_session(session_id)
+    if not session or not session.latest_frame:
+        # Return a placeholder or 404
+        return JsonResponse({'status': 'error', 'message': 'No frame available'}, status=404)
+        
+    # Return as JSON with base64
+    return JsonResponse({'status': 'success', 'frame': session.latest_frame})
+
 
 @csrf_exempt
 def log_tab_switch(request):

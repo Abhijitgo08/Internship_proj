@@ -19,6 +19,9 @@ class InterviewSession(models.Model):
     # State tracking for violations
     last_face_seen = models.DateTimeField(auto_now_add=True)
     last_audio_activity = models.DateTimeField(auto_now_add=True)
+    
+    # Live Monitoring
+    latest_frame = models.TextField(blank=True, null=True)
 
     # Final scoring fields (populated at end)
     final_score = models.FloatField(default=100.0)

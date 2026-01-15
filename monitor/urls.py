@@ -16,4 +16,5 @@ urlpatterns = [
     path('api/get_candidates/', views.get_candidate_list, name='get_candidate_list'),
     path('api/get_session_data/', views.get_candidate_session_data, name='get_candidate_session_data'),
     path('api/save_feedback/', views.save_feedback, name='save_feedback'),
+    path('api/get_latest_frame/', views.get_latest_frame, name='get_latest_frame'),
 ]
