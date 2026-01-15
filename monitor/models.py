@@ -56,3 +56,15 @@ class TabSwitchLog(models.Model):
     session = models.ForeignKey(InterviewSession, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     event_type = models.CharField(max_length=20) # 'blur', 'focus', 'hidden', 'visible'
+
+class InterviewerFeedback(models.Model):
+    session = models.ForeignKey(InterviewSession, on_delete=models.CASCADE, related_name='feedbacks')
+    interviewer_name = models.CharField(max_length=100, default='Interviewer')
+    behavior = models.CharField(max_length=20) # Poor, Average, Good, Excellent
+    confidence = models.CharField(max_length=20) # Low, Medium, High
+    knowledge = models.CharField(max_length=20) # Poor, Average, Good, Excellent
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Feedback for {self.session.candidate.name} by {self.interviewer_name}"

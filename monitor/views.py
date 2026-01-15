@@ -6,12 +6,12 @@ import json
 import base64
 import numpy as np
 import cv2
-from .models import Candidate, InterviewSession, ViolationLog, AudioActivityLog, TabSwitchLog
+from .models import Candidate, InterviewSession, ViolationLog, AudioActivityLog, TabSwitchLog, InterviewerFeedback
 from .ml_utils import FaceAnalyzer
 
 # Config / Constants
-FACE_ABSENCE_THRESHOLD_SECONDS = 5
-SILENCE_THRESHOLD_SECONDS = 10
+FACE_ABSENCE_THRESHOLD_SECONDS = 2
+SILENCE_THRESHOLD_SECONDS = 5
 VIOLATION_PENALTIES = {
     'FACE_MISSING': 5,
     'MULTIPLE_FACES': 10,
@@ -213,8 +213,6 @@ def send_audio_activity(request):
                 # Check silence duration
                 time_since_active = (now - session.last_audio_activity).total_seconds()
                 if time_since_active > SILENCE_THRESHOLD_SECONDS:
-                     # Debounce
-                    last_v = ViolationLog.objects.filter(session=session, violation_type='AUDIO_SILENCE').order_by('-timestamp').first()
                     if not last_v or (now - last_v.timestamp).total_seconds() > 5:
                         ViolationLog.objects.create(
                             session=session,
@@ -224,3 +222,80 @@ def send_audio_activity(request):
                         return JsonResponse({'status': 'success', 'violation': 'AUDIO_SILENCE'})
             return JsonResponse({'status': 'success', 'violation': None})
     return JsonResponse({'status': 'error'}, status=400)
+
+def interviewer_dashboard(request):
+    return render(request, 'interviewer.html')
+
+def get_candidate_list(request):
+    candidates = Candidate.objects.all().values('id', 'name', 'email')
+    return JsonResponse({'status': 'success', 'candidates': list(candidates)})
+
+def get_candidate_session_data(request):
+    candidate_id = request.GET.get('candidate_id')
+    if not candidate_id:
+        return JsonResponse({'status': 'error', 'message': 'Missing candidate_id'}, status=400)
+    
+    # Get latest session
+    session = InterviewSession.objects.filter(candidate_id=candidate_id).order_by('-start_time').first()
+    
+    if not session:
+        return JsonResponse({'status': 'error', 'message': 'No session found for this candidate'})
+
+    data = {
+        'session_id': session.id,
+        'start_time': session.start_time,
+        'end_time': session.end_time,
+        'final_score': session.final_score,
+        'risk_level': session.risk_level,
+        'violation_count': session.violation_count,
+        'is_active': session.is_active,
+    }
+    
+    # Add violations
+    violations = session.violations.all().order_by('-timestamp')
+    data['violations'] = [
+        {
+            'type': v.get_violation_type_display(),
+            'timestamp': v.timestamp.strftime('%H:%M:%S'),
+            'details': v.details
+        } for v in violations
+    ]
+    
+    try:
+        data['resume_url'] = session.candidate.resume.url if session.candidate.resume else None
+    except ValueError:
+        data['resume_url'] = None
+        
+    return JsonResponse({'status': 'success', 'data': data})
+
+@csrf_exempt
+def save_feedback(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            session_id = data.get('session_id')
+            
+            # If session_id is not provided, try to find the latest session for the candidate?
+            # Ideally the frontend sends the session_id retrieved from get_candidate_session_data
+            
+            session = get_session(session_id)
+            if not session:
+                # Fallback: maybe they selected a candidate who has a session but didn't pass ID correctly? 
+                # For now, require session_id.
+                return JsonResponse({'status': 'error', 'message': 'Invalid Session ID'}, status=404)
+
+            from .models import InterviewerFeedback # Local import if needed or top level
+            
+            InterviewerFeedback.objects.create(
+                session=session,
+                interviewer_name=data.get('interviewer_name', 'Interviewer'), # Could be passed from simple login
+                behavior=data.get('behavior'),
+                confidence=data.get('confidence'),
+                knowledge=data.get('knowledge'),
+                notes=data.get('notes')
+            )
+            
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'error'}, status=405)

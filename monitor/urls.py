@@ -10,4 +10,10 @@ urlpatterns = [
     path('api/log_tab_switch/', views.log_tab_switch, name='log_tab_switch'),
     path('api/send_audio_activity/', views.send_audio_activity, name='send_audio_activity'),
     path('api/get_candidate_details/', views.get_candidate_details, name='get_candidate_details'),
+    
+    # Interviewer Module
+    path('interviewer/', views.interviewer_dashboard, name='interviewer_dashboard'),
+    path('api/get_candidates/', views.get_candidate_list, name='get_candidate_list'),
+    path('api/get_session_data/', views.get_candidate_session_data, name='get_candidate_session_data'),
+    path('api/save_feedback/', views.save_feedback, name='save_feedback'),
 ]

@@ -41,7 +41,7 @@ async function initCamera() {
         // Init Audio
         audioContext = new AudioContext();
         analyser = audioContext.createAnalyser();
-        microphone = audioContext.createMediaStreamSource(stream);
+        microphone = audioContext.createeamSource(stream);
         javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
         analyser.smoothingTimeConstant = 0.8;
