@@ -231,6 +231,7 @@ def send_audio_activity(request):
                 # Check silence duration
                 time_since_active = (now - session.last_audio_activity).total_seconds()
                 if time_since_active > SILENCE_THRESHOLD_SECONDS:
+                    last_v = ViolationLog.objects.filter(session=session, violation_type='AUDIO_SILENCE').order_by('-timestamp').first()
                     if not last_v or (now - last_v.timestamp).total_seconds() > 5:
                         ViolationLog.objects.create(
                             session=session,

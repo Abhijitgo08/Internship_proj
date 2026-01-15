@@ -74,7 +74,7 @@ async function initCamera() {
 
 function checkAudio(volume) {
     // If volume < 5, consider silent
-    const THRESHOLD = 5;
+    const THRESHOLD = 2;
     let currentIsSilent = volume < THRESHOLD;
 
     // Update UI immediately (or throttled)
